@@ -1,0 +1,8 @@
+name          = "encoding"
+version       = "1.0.0"
+license       = "MIT"
+description   = "The Quirk stdlib 'encoding' package."
+repository    = "github.com/AlexVachon/quirk-encoding"
+quirk-version = ">=1.4.0"
+
+[deps]
