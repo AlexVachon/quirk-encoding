@@ -1,0 +1,89 @@
+// Tests for the encoding package (json, base64, hex). Run with `quirk test`.
+use encoding.json
+use encoding.base64
+use encoding.hex
+from typing.interfaces.serializable use { ISerializable }
+from io.file use { File }
+
+struct Point : ISerializable {
+    x: Int
+    y: Int
+
+    define __init(self, x: Int, y: Int) -> void {
+        self.x = x
+        self.y = y
+    }
+
+    define to_json(self) -> String {
+        return "{\"x\":" + self.x.str() + ",\"y\":" + self.y.str() + "}"
+    }
+}
+
+define test_dumps_typed_values() -> void {
+    m := Map()
+    m.put("name", "Alice")
+    m.put("age", 30)
+    m.put("active", true)
+    m.put("score", 98.5)
+    m.put("nickname", null)
+    assert json.dumps(m) == "{\"name\":\"Alice\",\"age\":30,\"active\":true,\"score\":98.5,\"nickname\":null}"
+}
+
+define test_strings_stay_strings() -> void {
+    // "30" is a String, so it's written as one.
+    m := Map()
+    m.put("age", "30")
+    assert json.dumps(m) == "{\"age\":\"30\"}"
+}
+
+define test_dumps_list() -> void {
+    assert json.dumps([1, "two", false, 3.5, null]) == "[1,\"two\",false,3.5,null]"
+}
+
+define test_dumps_serializable_struct() -> void {
+    assert json.dumps(Point(10, 25)) == "{\"x\":10,\"y\":25}"
+}
+
+define test_dumps_strings() -> void {
+    assert json.dumps("hello") == "\"hello\""
+    assert json.dumps("say \"hi\"") == "\"say \\\"hi\\\"\""
+}
+
+define test_loads_object() -> void {
+    data: Map = json.loads("{\"product\":\"Quirk\",\"version\":\"1.0\",\"stable\":true}")
+    assert data.get("product") == "Quirk"
+    assert data.get("version") == "1.0"
+}
+
+define test_round_trip() -> void {
+    original := Map()
+    original.put("x", "7")
+    original.put("label", "origin")
+    recovered: Map = json.loads(json.dumps(original))
+    assert "${recovered.get("x")}" == "7"
+    assert recovered.get("label") == "origin"
+}
+
+define test_dump_and_load_a_file() -> void {
+    path := "/tmp/quirk_encoding_test.json"
+    config := Map()
+    config.put("host", "localhost")
+    with File(path, "w") as f {
+        json.dump(config, f)
+    }
+    with File(path, "r") as f {
+        loaded: Map = json.load(f)
+        assert loaded.get("host") == "localhost"
+    }
+}
+
+define test_base64_round_trip() -> void {
+    assert base64.encode("hello world") == "aGVsbG8gd29ybGQ="
+    assert base64.decode("aGVsbG8gd29ybGQ=") == "hello world"
+    assert base64.encode("") == ""
+}
+
+define test_hex_round_trip() -> void {
+    assert hex.encode("Hi!") == "486921"
+    assert hex.decode("486921") == "Hi!"
+}
